@@ -243,11 +243,11 @@ func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 			boundary = EXCLUDED.boundary,
 			status = EXCLUDED.status
 		`
-		provinceCols := "(code, name, capital, lat, lng, elevation, timezone, area, population, boundary, status)"
+		provinceCols := fmt.Sprintf("(%s, name, capital, lat, lng, elevation, timezone, area, population, boundary, status)", cfg.PKName)
 		provinceSelect := "code, name, capital, lat, lng, elv, tz, luas, penduduk, path, status"
 		provinceSet = "name = EXCLUDED.name, " + extraSet
 
-		regencyCols := "(code, name, province_code, capital, lat, lng, elevation, timezone, area, population, boundary, status)"
+		regencyCols := fmt.Sprintf("(%s, name, province_code, capital, lat, lng, elevation, timezone, area, population, boundary, status)", cfg.PKName)
 		regencySelect := "code, name, SUBSTRING(code, 1, 2), capital, lat, lng, elv, tz, luas, penduduk, path, status"
 		regencySet = "name = EXCLUDED.name, province_code = EXCLUDED.province_code, " + extraSet
 
@@ -255,8 +255,8 @@ func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 		_, err := db.Exec(fmt.Sprintf(`
 			INSERT INTO %s %s
 			SELECT %s FROM %s WHERE LENGTH(code) = 2
-			ON CONFLICT (code) DO UPDATE SET %s
-		`, cfg.TableProvinces, provinceCols, provinceSelect, cfg.TableTemp, provinceSet))
+			ON CONFLICT (%s) DO UPDATE SET %s
+		`, cfg.TableProvinces, provinceCols, provinceSelect, cfg.TableTemp, cfg.PKName, provinceSet))
 		if err != nil {
 			return err
 		}
@@ -265,8 +265,8 @@ func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 		_, err = db.Exec(fmt.Sprintf(`
 			INSERT INTO %s %s
 			SELECT %s FROM %s WHERE LENGTH(code) = 5
-			ON CONFLICT (code) DO UPDATE SET %s
-		`, cfg.TableRegencies, regencyCols, regencySelect, cfg.TableTemp, regencySet))
+			ON CONFLICT (%s) DO UPDATE SET %s
+		`, cfg.TableRegencies, regencyCols, regencySelect, cfg.TableTemp, cfg.PKName, regencySet))
 		if err != nil {
 			return err
 		}
@@ -274,40 +274,40 @@ func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 		// Simple Mode
 		fmt.Println("Syncing provinces...")
 		_, err := db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (code, name)
+			INSERT INTO %s (%s, name)
 			SELECT code, name FROM %s WHERE LENGTH(code) = 2
-			ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name
-		`, cfg.TableProvinces, cfg.TableTemp))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name
+		`, cfg.TableProvinces, cfg.PKName, cfg.TableTemp, cfg.PKName))
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Syncing regencies...")
 		_, err = db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (code, name, province_code)
+			INSERT INTO %s (%s, name, province_code)
 			SELECT code, name, SUBSTRING(code, 1, 2) FROM %s WHERE LENGTH(code) = 5
-			ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, province_code = EXCLUDED.province_code
-		`, cfg.TableRegencies, cfg.TableTemp))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, province_code = EXCLUDED.province_code
+		`, cfg.TableRegencies, cfg.PKName, cfg.TableTemp, cfg.PKName))
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Syncing districts...")
 		_, err = db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (code, name, regency_code)
+			INSERT INTO %s (%s, name, regency_code)
 			SELECT code, name, SUBSTRING(code, 1, 5) FROM %s WHERE LENGTH(code) = 8
-			ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, regency_code = EXCLUDED.regency_code
-		`, cfg.TableDistricts, cfg.TableTemp))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, regency_code = EXCLUDED.regency_code
+		`, cfg.TableDistricts, cfg.PKName, cfg.TableTemp, cfg.PKName))
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Syncing villages...")
 		_, err = db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (code, name, district_code)
+			INSERT INTO %s (%s, name, district_code)
 			SELECT code, name, SUBSTRING(code, 1, 8) FROM %s WHERE LENGTH(code) = 13
-			ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name, district_code = EXCLUDED.district_code
-		`, cfg.TableVillages, cfg.TableTemp))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, district_code = EXCLUDED.district_code
+		`, cfg.TableVillages, cfg.PKName, cfg.TableTemp, cfg.PKName))
 		if err != nil {
 			return err
 		}

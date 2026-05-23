@@ -24,6 +24,7 @@ type Config struct {
 	TableVillages  string
 	CronSchedule   string
 	LastCommitFile string
+	PKName         string
 }
 
 func LoadConfig(mode SyncMode) (*Config, error) {
@@ -50,6 +51,7 @@ func LoadConfig(mode SyncMode) (*Config, error) {
 		TableVillages:  getEnv("TABLE_VILLAGES", "villages"),
 		CronSchedule:   getEnv("CRON_SCHEDULE", "0 0 * * *"),
 		LastCommitFile: getEnv("LAST_COMMIT_FILE", defaultCommitFile),
+		PKName:         getEnv("PRIMARY_KEY_NAME", "code"),
 	}, nil
 }
 

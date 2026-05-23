@@ -30,6 +30,7 @@ This project provides two Go-based services to automatically synchronize Indones
 | `TABLE_REGENCIES` | Table name for regencies     | `regencies`      | `regencies`             |
 | `TABLE_DISTRICTS` | Table name for districts     | `districts`      | `districts`             |
 | `TABLE_VILLAGES`  | Table name for villages      | `villages`       | `villages`              |
+| `PRIMARY_KEY_NAME`| Name of the primary key column | `code`           | `code`                  |
 | `CRON_SCHEDULE`   | Cron expression              | `0 0 * * *`      | `0 0 * * *`             |
 
 ## How to Run

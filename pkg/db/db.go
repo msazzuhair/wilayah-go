@@ -48,11 +48,11 @@ func ensureSchema(db *sql.DB, cfg *config.Config) error {
 			boundary TEXT,
 			status INT
 		`
-		provinceCols = "code VARCHAR(2) PRIMARY KEY, name VARCHAR(100) NOT NULL, " + extraCols
-		regencyCols = "code VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_code VARCHAR(2) REFERENCES " + cfg.TableProvinces + "(code), " + extraCols
+		provinceCols = fmt.Sprintf("%s VARCHAR(2) PRIMARY KEY, name VARCHAR(100) NOT NULL, %s", cfg.PKName, extraCols)
+		regencyCols = fmt.Sprintf("%s VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_code VARCHAR(2) REFERENCES %s(%s), %s", cfg.PKName, cfg.TableProvinces, cfg.PKName, extraCols)
 	} else {
-		provinceCols = "code VARCHAR(2) PRIMARY KEY, name VARCHAR(100) NOT NULL"
-		regencyCols = "code VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_code VARCHAR(2) REFERENCES " + cfg.TableProvinces + "(code)"
+		provinceCols = fmt.Sprintf("%s VARCHAR(2) PRIMARY KEY, name VARCHAR(100) NOT NULL", cfg.PKName)
+		regencyCols = fmt.Sprintf("%s VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_code VARCHAR(2) REFERENCES %s(%s)", cfg.PKName, cfg.TableProvinces, cfg.PKName)
 	}
 
 	queries := []string{
@@ -64,15 +64,15 @@ func ensureSchema(db *sql.DB, cfg *config.Config) error {
 	// But let's keep them anyway as they don't hurt.
 	queries = append(queries,
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
-			code VARCHAR(8) PRIMARY KEY,
+			%s VARCHAR(8) PRIMARY KEY,
 			name VARCHAR(100) NOT NULL,
-			regency_code VARCHAR(5) REFERENCES %s(code)
-		)`, cfg.TableDistricts, cfg.TableRegencies),
+			regency_code VARCHAR(5) REFERENCES %s(%s)
+		)`, cfg.TableDistricts, cfg.PKName, cfg.TableRegencies, cfg.PKName),
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
-			code VARCHAR(13) PRIMARY KEY,
+			%s VARCHAR(13) PRIMARY KEY,
 			name VARCHAR(100) NOT NULL,
-			district_code VARCHAR(8) REFERENCES %s(code)
-		)`, cfg.TableVillages, cfg.TableDistricts),
+			district_code VARCHAR(8) REFERENCES %s(%s)
+		)`, cfg.TableVillages, cfg.PKName, cfg.TableDistricts, cfg.PKName),
 	)
 
 	for _, q := range queries {

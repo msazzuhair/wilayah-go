@@ -96,12 +96,13 @@ func TestSyncFromTemp_Simple(t *testing.T) {
 		TableRegencies: "regencies",
 		TableDistricts: "districts",
 		TableVillages:  "villages",
+		PKName:         "code",
 	}
 
-	mock.ExpectExec("INSERT INTO provinces").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("INSERT INTO regencies").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("INSERT INTO districts").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("INSERT INTO villages").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO provinces \\(code, name\\)").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO regencies \\(code, name, province_code\\)").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO districts \\(code, name, regency_code\\)").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO villages \\(code, name, district_code\\)").WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = syncFromTemp(db, cfg)
 	if err != nil {
@@ -125,10 +126,11 @@ func TestSyncFromTemp_Complex(t *testing.T) {
 		TableTemp:      "temp_wilayah",
 		TableProvinces: "provinces",
 		TableRegencies: "regencies",
+		PKName:         "id",
 	}
 
-	mock.ExpectExec("INSERT INTO provinces").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("INSERT INTO regencies").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO provinces \\(id,").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO regencies \\(id,").WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = syncFromTemp(db, cfg)
 	if err != nil {
