@@ -17,13 +17,13 @@ This project provides two Go-based services to automatically synchronize Indones
 
 ## Configuration
 
-| Variable | Description | Default (Simple) | Default (Complex) |
-|----------|-------------|------------------|-------------------|
-| `DB_DSN` | PostgreSQL connection string | `postgres://...` | `postgres://...` |
-| `SOURCE_URL` | SQL Source URL | `wilayah.sql` | `wilayah_level_1_2.sql` |
-| `TABLE_PROVINCES` | Table name for provinces | `provinces` | `provinces` |
-| `TABLE_REGENCIES` | Table name for regencies | `regencies` | `regencies` |
-| `CRON_SCHEDULE` | Cron expression | `0 0 * * *` | `0 0 * * *` |
+| Variable          | Description                  | Default (Simple) | Default (Complex)       |
+|-------------------|------------------------------|------------------|-------------------------|
+| `DB_DSN`          | PostgreSQL connection string | `postgres://...` | `postgres://...`        |
+| `SOURCE_URL`      | SQL Source URL               | `wilayah.sql`    | `wilayah_level_1_2.sql` |
+| `TABLE_PROVINCES` | Table name for provinces     | `provinces`      | `provinces`             |
+| `TABLE_REGENCIES` | Table name for regencies     | `regencies`      | `regencies`             |
+| `CRON_SCHEDULE`   | Cron expression              | `0 0 * * *`      | `0 0 * * *`             |
 
 ## How to Run
 

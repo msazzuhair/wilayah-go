@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -23,19 +24,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer database.Close()
+	defer func(database *sql.DB) {
+		err := database.Close()
+		if err != nil {
+
+		}
+	}(database)
 
 	fmt.Println("Starting Complex Area Sync Service...")
 
 	// Run initial sync
-	if err := sync.SyncData(database, cfg); err != nil {
+	if err := sync.SynchronizeData(database, cfg); err != nil {
 		log.Printf("Initial sync failed: %v", err)
 	}
 
 	c := cron.New()
 	_, err = c.AddFunc(cfg.CronSchedule, func() {
 		fmt.Println("Running scheduled complex sync...")
-		if err := sync.SyncData(database, cfg); err != nil {
+		if err := sync.SynchronizeData(database, cfg); err != nil {
 			log.Printf("Scheduled complex sync failed: %v", err)
 		}
 	})

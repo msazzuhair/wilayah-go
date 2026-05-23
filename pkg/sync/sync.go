@@ -33,7 +33,12 @@ func GetLatestCommitSHA(sourceURL string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("github api returned status: %s", resp.Status)
@@ -63,7 +68,7 @@ func WriteStoredSHA(filePath, sha string) error {
 	return os.WriteFile(filePath, []byte(sha), 0644)
 }
 
-func SyncData(db *sql.DB, cfg *config.Config) error {
+func SynchronizeData(db *sql.DB, cfg *config.Config) error {
 	latestSHA, err := GetLatestCommitSHA(cfg.SourceURL)
 	if err != nil {
 		return fmt.Errorf("failed to check for updates: %w", err)
@@ -81,7 +86,12 @@ func SyncData(db *sql.DB, cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to download SQL: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to download SQL, status: %s", resp.Status)
@@ -154,7 +164,12 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func(tx *sql.Tx) {
+		err := tx.Rollback()
+		if err != nil {
+
+		}
+	}(tx)
 
 	cols := "(code, name)"
 	if mode == config.ModeComplex {

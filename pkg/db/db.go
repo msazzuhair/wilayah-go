@@ -15,10 +15,18 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 	}
 
 	if err := db.Ping(); err != nil {
+		err := db.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
 	if err := ensureSchema(db, cfg); err != nil {
+		err := db.Close()
+		if err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 
