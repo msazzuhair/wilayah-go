@@ -155,20 +155,18 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 	buf := make([]byte, 64*1024)
 	scanner.Buffer(buf, maxCapacity)
 
-	insertRegex := regexp.MustCompile(`(?i)INSERT INTO\s+.*?\s*\(.*?\)\s+VALUES`)
+	insertRegex := regexp.MustCompile(`(?i)INSERT INTO\s+.*?\s*\(.*?\)`)
 
 	var currentValues []string
 	inInsert := false
+	totalRows := 0
 
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer func(tx *sql.Tx) {
-		err := tx.Rollback()
-		if err != nil {
-
-		}
+		_ = tx.Rollback()
 	}(tx)
 
 	cols := "(code, name)"
@@ -178,22 +176,23 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 
 	for scanner.Scan() {
 		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
 
-		if insertRegex.MatchString(line) {
+		if insertRegex.MatchString(trimmedLine) {
 			inInsert = true
 			continue
 		}
 
 		if inInsert {
-			trimmedLine := strings.TrimSpace(line)
-			if trimmedLine == "" || strings.HasPrefix(trimmedLine, "--") || strings.HasPrefix(trimmedLine, "/*") {
+			if trimmedLine == "" || strings.HasPrefix(trimmedLine, "--") || strings.HasPrefix(trimmedLine, "/*") || strings.EqualFold(trimmedLine, "VALUES") {
 				continue
 			}
 
 			cleaned := strings.TrimRight(trimmedLine, ";,")
-			if cleaned != "" {
+			if cleaned != "" && strings.HasPrefix(cleaned, "(") {
 				cleaned = strings.ReplaceAll(cleaned, `\'`, `''`)
 				currentValues = append(currentValues, cleaned)
+				totalRows++
 			}
 
 			if strings.HasSuffix(trimmedLine, ";") {
@@ -205,7 +204,7 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 					currentValues = nil
 				}
 				inInsert = false
-			} else if len(currentValues) >= 100 { // Smaller batch for complex mode due to size
+			} else if len(currentValues) >= 200 {
 				query := fmt.Sprintf("INSERT INTO %s %s VALUES %s", tempTableName, cols, strings.Join(currentValues, ","))
 				if _, err := tx.Exec(query); err != nil {
 					return err
@@ -226,6 +225,7 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 		}
 	}
 
+	fmt.Printf("Processed %d rows from SQL source.\n", totalRows)
 	return tx.Commit()
 }
 
