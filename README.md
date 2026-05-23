@@ -1,5 +1,10 @@
 # Area Auto-Sync Services
 
+[![Build and Publish Docker Images](https://github.com/msazzuhair/wilayah-go/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/msazzuhair/wilayah-go/actions/workflows/docker-publish.yml)
+![Go Version](https://img.shields.io/badge/go-1.26-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
+
 This project provides two Go-based services to automatically synchronize Indonesian administrative region data from GitHub into a PostgreSQL database.
 
 ## Services
