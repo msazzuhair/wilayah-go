@@ -1,0 +1,59 @@
+name: Build and Publish Docker Images
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Simple Sync
+        id: meta-simple
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-simple
+
+      - name: Build and push Simple Sync image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: simple.Dockerfile
+          push: true
+          tags: ${{ steps.meta-simple.outputs.tags }}
+          labels: ${{ steps.meta-simple.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for Complex Sync
+        id: meta-complex
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-complex
+
+      - name: Build and push Complex Sync image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: complex.Dockerfile
+          push: true
+          tags: ${{ steps.meta-complex.outputs.tags }}
+          labels: ${{ steps.meta-complex.outputs.labels }}
