@@ -29,6 +29,7 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 
 func ensureSchema(db *sql.DB, cfg *config.Config) error {
 	var provinceCols, regencyCols string
+	fkSuffix := cfg.PKName
 
 	if cfg.SyncMode == config.ModeComplex {
 		extraCols := `
@@ -43,10 +44,10 @@ func ensureSchema(db *sql.DB, cfg *config.Config) error {
 			status INT
 		`
 		provinceCols = fmt.Sprintf("%s VARCHAR(2) PRIMARY KEY, name VARCHAR(100) NOT NULL, %s", cfg.PKName, extraCols)
-		regencyCols = fmt.Sprintf("%s VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_code VARCHAR(2) REFERENCES %s(%s), %s", cfg.PKName, cfg.TableProvinces, cfg.PKName, extraCols)
+		regencyCols = fmt.Sprintf("%s VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_%s VARCHAR(2) REFERENCES %s(%s), %s", cfg.PKName, fkSuffix, cfg.TableProvinces, cfg.PKName, extraCols)
 	} else {
 		provinceCols = fmt.Sprintf("%s VARCHAR(2) PRIMARY KEY, name VARCHAR(100) NOT NULL", cfg.PKName)
-		regencyCols = fmt.Sprintf("%s VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_code VARCHAR(2) REFERENCES %s(%s)", cfg.PKName, cfg.TableProvinces, cfg.PKName)
+		regencyCols = fmt.Sprintf("%s VARCHAR(5) PRIMARY KEY, name VARCHAR(100) NOT NULL, province_%s VARCHAR(2) REFERENCES %s(%s)", cfg.PKName, fkSuffix, cfg.TableProvinces, cfg.PKName)
 	}
 
 	queries := []string{
@@ -60,13 +61,13 @@ func ensureSchema(db *sql.DB, cfg *config.Config) error {
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			%s VARCHAR(8) PRIMARY KEY,
 			name VARCHAR(100) NOT NULL,
-			regency_code VARCHAR(5) REFERENCES %s(%s)
-		)`, cfg.TableDistricts, cfg.PKName, cfg.TableRegencies, cfg.PKName),
+			regency_%s VARCHAR(5) REFERENCES %s(%s)
+		)`, cfg.TableDistricts, cfg.PKName, fkSuffix, cfg.TableRegencies, cfg.PKName),
 		fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (
 			%s VARCHAR(13) PRIMARY KEY,
 			name VARCHAR(100) NOT NULL,
-			district_code VARCHAR(8) REFERENCES %s(%s)
-		)`, cfg.TableVillages, cfg.PKName, cfg.TableDistricts, cfg.PKName),
+			district_%s VARCHAR(8) REFERENCES %s(%s)
+		)`, cfg.TableVillages, cfg.PKName, fkSuffix, cfg.TableDistricts, cfg.PKName),
 	)
 
 	for _, q := range queries {

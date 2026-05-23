@@ -231,6 +231,8 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 
 func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 	var provinceSet, regencySet string
+	fkSuffix := cfg.PKName
+
 	if cfg.SyncMode == config.ModeComplex {
 		extraSet := `
 			capital = EXCLUDED.capital,
@@ -247,9 +249,9 @@ func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 		provinceSelect := "code, name, capital, lat, lng, elv, tz, luas, penduduk, path, status"
 		provinceSet = "name = EXCLUDED.name, " + extraSet
 
-		regencyCols := fmt.Sprintf("(%s, name, province_code, capital, lat, lng, elevation, timezone, area, population, boundary, status)", cfg.PKName)
+		regencyCols := fmt.Sprintf("(%s, name, province_%s, capital, lat, lng, elevation, timezone, area, population, boundary, status)", cfg.PKName, fkSuffix)
 		regencySelect := "code, name, SUBSTRING(code, 1, 2), capital, lat, lng, elv, tz, luas, penduduk, path, status"
-		regencySet = "name = EXCLUDED.name, province_code = EXCLUDED.province_code, " + extraSet
+		regencySet = fmt.Sprintf("name = EXCLUDED.name, province_%s = EXCLUDED.province_%s, %s", fkSuffix, fkSuffix, extraSet)
 
 		fmt.Println("Syncing provinces (complex)...")
 		_, err := db.Exec(fmt.Sprintf(`
@@ -284,30 +286,30 @@ func syncFromTemp(db *sql.DB, cfg *config.Config) error {
 
 		fmt.Println("Syncing regencies...")
 		_, err = db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (%s, name, province_code)
+			INSERT INTO %s (%s, name, province_%s)
 			SELECT code, name, SUBSTRING(code, 1, 2) FROM %s WHERE LENGTH(code) = 5
-			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, province_code = EXCLUDED.province_code
-		`, cfg.TableRegencies, cfg.PKName, cfg.TableTemp, cfg.PKName))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, province_%s = EXCLUDED.province_%s
+		`, cfg.TableRegencies, cfg.PKName, fkSuffix, cfg.TableTemp, cfg.PKName, fkSuffix, fkSuffix))
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Syncing districts...")
 		_, err = db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (%s, name, regency_code)
+			INSERT INTO %s (%s, name, regency_%s)
 			SELECT code, name, SUBSTRING(code, 1, 5) FROM %s WHERE LENGTH(code) = 8
-			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, regency_code = EXCLUDED.regency_code
-		`, cfg.TableDistricts, cfg.PKName, cfg.TableTemp, cfg.PKName))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, regency_%s = EXCLUDED.regency_%s
+		`, cfg.TableDistricts, cfg.PKName, fkSuffix, cfg.TableTemp, cfg.PKName, fkSuffix, fkSuffix))
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Syncing villages...")
 		_, err = db.Exec(fmt.Sprintf(`
-			INSERT INTO %s (%s, name, district_code)
+			INSERT INTO %s (%s, name, district_%s)
 			SELECT code, name, SUBSTRING(code, 1, 8) FROM %s WHERE LENGTH(code) = 13
-			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, district_code = EXCLUDED.district_code
-		`, cfg.TableVillages, cfg.PKName, cfg.TableTemp, cfg.PKName))
+			ON CONFLICT (%s) DO UPDATE SET name = EXCLUDED.name, district_%s = EXCLUDED.district_%s
+		`, cfg.TableVillages, cfg.PKName, fkSuffix, cfg.TableTemp, cfg.PKName, fkSuffix, fkSuffix))
 		if err != nil {
 			return err
 		}

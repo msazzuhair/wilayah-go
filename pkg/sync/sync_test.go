@@ -130,7 +130,7 @@ func TestSyncFromTemp_Complex(t *testing.T) {
 	}
 
 	mock.ExpectExec("INSERT INTO provinces \\(id,").WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("INSERT INTO regencies \\(id,").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO regencies \\(id, name, province_id,").WillReturnResult(sqlmock.NewResult(1, 1))
 
 	err = syncFromTemp(db, cfg)
 	if err != nil {
