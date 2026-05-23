@@ -23,6 +23,8 @@ This project provides two Go-based services to automatically synchronize Indones
 | `SOURCE_URL`      | SQL Source URL               | `wilayah.sql`    | `wilayah_level_1_2.sql` |
 | `TABLE_PROVINCES` | Table name for provinces     | `provinces`      | `provinces`             |
 | `TABLE_REGENCIES` | Table name for regencies     | `regencies`      | `regencies`             |
+| `TABLE_DISTRICTS` | Table name for districts     | `districts`      | `districts`             |
+| `TABLE_VILLAGES`  | Table name for villages      | `villages`       | `villages`              |
 | `CRON_SCHEDULE`   | Cron expression              | `0 0 * * *`      | `0 0 * * *`             |
 
 ## How to Run
@@ -57,8 +59,8 @@ docker run --env-file .env area-sync-complex
 
 The project includes a GitHub Actions workflow that automatically builds and pushes images to `ghcr.io` on every push to the `master` or `main` branch.
 
-- `ghcr.io/<repo>-simple:latest`
-- `ghcr.io/<repo>-complex:latest`
+- `ghcr.io/msazzuhair/wilayah-go-simple:latest`
+- `ghcr.io/msazzuhair/wilayah-go-complex:latest`
 
 ## License
 MIT
