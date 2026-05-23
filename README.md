@@ -68,5 +68,14 @@ The project includes a GitHub Actions workflow that automatically builds and pus
 - `ghcr.io/msazzuhair/wilayah-go-simple:latest`
 - `ghcr.io/msazzuhair/wilayah-go-complex:latest`
 
+## Troubleshooting
+
+### Docker Connection Refused
+If you see `connection refused` when running in Docker, it's likely because the container is trying to connect to `localhost` inside itself. 
+
+- **If PostgreSQL is on your host machine (Linux):** Use your host's IP address or `--network="host"`.
+- **If PostgreSQL is on your host machine (Mac/Windows):** Use `DB_DSN=postgres://user:pass@host.docker.internal:5432/db`.
+- **If using Docker Compose:** Use the service name of your postgres container (e.g., `db:5432`).
+
 ## License
 MIT
