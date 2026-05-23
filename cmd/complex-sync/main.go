@@ -31,7 +31,7 @@ func main() {
 		}
 	}(database)
 
-	fmt.Println("Starting Complex Area Sync Service...")
+	fmt.Println("Starting Indonesia Regions Complex Sync Service...")
 
 	// Run initial sync
 	if err := sync.SynchronizeData(database, cfg); err != nil {

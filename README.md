@@ -1,11 +1,13 @@
-# Area Auto-Sync Services
+# Indonesia Regions Auto-Sync Services
 
 [![Build and Publish Docker Images](https://github.com/msazzuhair/wilayah-go/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/msazzuhair/wilayah-go/actions/workflows/docker-publish.yml)
 ![Go Version](https://img.shields.io/badge/go-1.26-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-blue.svg)
 
-This project provides two Go-based services to automatically synchronize Indonesian administrative region data from GitHub into a PostgreSQL database.
+This project provides two Go-based services to automatically synchronize Indonesian administrative region data into a PostgreSQL database.
+
+**Data Source Credit:** This project uses SQL data from the excellent [cahyadsn/wilayah](https://github.com/cahyadsn/wilayah) repository.
 
 ## Services
 
@@ -78,4 +80,5 @@ If you see `connection refused` when running in Docker, it's likely because the 
 - **If using Docker Compose:** Use the service name of your postgres container (e.g., `db:5432`).
 
 ## License
-MIT
+
+This project is licensed under the [MIT License](LICENSE).
