@@ -33,8 +33,8 @@ This project provides two Go-based services to automatically synchronize Indones
 | `TABLE_DISTRICTS`  | Table name for districts       | `districts`      | `districts`             |
 | `TABLE_VILLAGES`   | Table name for villages        | `villages`       | `villages`              |
 | `PRIMARY_KEY_NAME` | Name of the primary key column | `code`           | `code`                  |
+| `FORCE_SYNC`       | Bypasses version check         | `false`          | `false`                 |
 | `CRON_SCHEDULE`    | Cron expression                | `0 0 * * *`      | `0 0 * * *`             |
-| `FORCE_SYNC`        | Force sync on every run         | `false`          | `false`                 |
 
 ## How to Run
 
