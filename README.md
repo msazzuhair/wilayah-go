@@ -34,6 +34,7 @@ This project provides two Go-based services to automatically synchronize Indones
 | `TABLE_VILLAGES`   | Table name for villages        | `villages`       | `villages`              |
 | `PRIMARY_KEY_NAME` | Name of the primary key column | `code`           | `code`                  |
 | `CRON_SCHEDULE`    | Cron expression                | `0 0 * * *`      | `0 0 * * *`             |
+| `FORCE_SYNC`        | Force sync on every run         | `false`          | `false`                 |
 
 ## How to Run
 
@@ -55,12 +56,14 @@ go run ./cmd/complex-sync/main.go
 ```bash
 docker build -t area-sync-simple -f simple.Dockerfile .
 docker run --env-file .env area-sync-simple
+# Force sync: docker run --env "FORCE_SYNC=true" --env-file .env area-sync-simple
 ```
 
 **Complex Sync:**
 ```bash
 docker build -t area-sync-complex -f complex.Dockerfile .
 docker run --env-file .env area-sync-complex
+# Force sync: docker run --env "FORCE_SYNC=true" --env-file .env area-sync-complex
 ```
 
 ## Deployment
@@ -82,3 +85,7 @@ If you see `connection refused` when running in Docker, it's likely because the 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Force Sync
+
+Set `FORCE_SYNC=true` (or `--force`) to run sync regardless of the last commit SHA. Useful for debugging or ensuring data freshness.

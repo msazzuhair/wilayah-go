@@ -19,4 +19,5 @@ WORKDIR /root/
 
 COPY --from=builder /app/simple-sync .
 
-CMD ["./simple-sync"]
+ENV --force=0
+CMD ["./simple-sync", "--force=${--force}"]

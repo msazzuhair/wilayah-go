@@ -25,9 +25,10 @@ type Config struct {
 	CronSchedule   string
 	LastCommitFile string
 	PKName         string
+	ForceSync      bool
 }
 
-func LoadConfig(mode SyncMode) (*Config, error) {
+func LoadConfig(mode SyncMode, force bool) (*Config, error) {
 	_ = godotenv.Load()
 
 	var defaultURL string
@@ -52,6 +53,7 @@ func LoadConfig(mode SyncMode) (*Config, error) {
 		CronSchedule:   getEnv("CRON_SCHEDULE", "0 0 * * *"),
 		LastCommitFile: getEnv("LAST_COMMIT_FILE", defaultCommitFile),
 		PKName:         getEnv("PRIMARY_KEY_NAME", "code"),
+		ForceSync:      force,
 	}, nil
 }
 

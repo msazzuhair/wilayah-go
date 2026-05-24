@@ -1,6 +1,10 @@
 package sync
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"wilayah-go/pkg/config"
@@ -111,6 +115,85 @@ func TestSyncFromTemp_Simple(t *testing.T) {
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestForceSync(t *testing.T) {
+	sqlData := `INSERT INTO wilayah (kode, nama) VALUES ('11','Aceh');`
+	mockSHA := "test-sha-123"
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/commits") {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `[{"sha": "%s"}]`, mockSHA)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(sqlData))
+	}))
+	defer server.Close()
+
+	os.Setenv("GITHUB_API_BASE", server.URL)
+	defer os.Unsetenv("GITHUB_API_BASE")
+
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("failed to open mock database: %v", err)
+	}
+	defer db.Close()
+
+	// Create a temporary commit file
+	tmpFile := ".test_last_sync_commit"
+	defer os.Remove(tmpFile)
+
+	// Mock URL must have enough parts for GetLatestCommitSHA
+	// raw.githubusercontent.com/user/repo/branch/db/wilayah.sql
+	fakeSourceURL := server.URL + "/user/repo/branch/db/wilayah.sql"
+
+	cfg := &config.Config{
+		SyncMode:       config.ModeSimple,
+		SourceURL:      fakeSourceURL,
+		TableTemp:      "temp_wilayah",
+		TableProvinces: "provinces",
+		TableRegencies: "regencies",
+		TableDistricts: "districts",
+		TableVillages:  "villages",
+		PKName:         "code",
+		ForceSync:      true,
+		LastCommitFile: tmpFile,
+	}
+
+	// 1. Setup Table
+	mock.ExpectExec("DROP TABLE IF EXISTS temp_wilayah").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("CREATE TABLE temp_wilayah").WillReturnResult(sqlmock.NewResult(1, 1))
+
+	// 2. Data Insertion into temp
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT INTO temp_wilayah").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	// 3. syncFromTemp execution
+	mock.ExpectExec("INSERT INTO provinces").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO regencies").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO districts").WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectExec("INSERT INTO villages").WillReturnResult(sqlmock.NewResult(1, 1))
+
+	// 4. Cleanup
+	mock.ExpectExec("DROP TABLE IF EXISTS temp_wilayah").WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err = SynchronizeData(db, cfg)
+	if err != nil {
+		t.Errorf("SynchronizeData with ForceSync=true failed: %v", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("there were unfulfilled expectations: %s", err)
+	}
+
+	// Verify the SHA was written
+	storedSHA := ReadStoredSHA(tmpFile)
+	if storedSHA != mockSHA {
+		t.Errorf("expected stored SHA %s, got %s", mockSHA, storedSHA)
 	}
 }
 

@@ -28,16 +28,18 @@ func GetLatestCommitSHA(sourceURL string) (string, error) {
 	repo := parts[4]
 	path := strings.Join(parts[6:], "/")
 
-	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/commits?path=%s&page=1&per_page=1", user, repo, path)
+	apiBase := os.Getenv("GITHUB_API_BASE")
+	if apiBase == "" {
+		apiBase = "https://api.github.com"
+	}
+
+	url := fmt.Sprintf("%s/repos/%s/%s/commits?path=%s&page=1&per_page=1", apiBase, user, repo, path)
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
 	}
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
+		_ = Body.Close()
 	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
@@ -74,23 +76,24 @@ func SynchronizeData(db *sql.DB, cfg *config.Config) error {
 		return fmt.Errorf("failed to check for updates: %w", err)
 	}
 
-	storedSHA := ReadStoredSHA(cfg.LastCommitFile)
-	if latestSHA == storedSHA {
-		fmt.Println("Already up to date.")
-		return nil
+	if cfg.ForceSync {
+		fmt.Println("Force sync mode enabled. Bypassing version check...")
+	} else {
+		storedSHA := ReadStoredSHA(cfg.LastCommitFile)
+		if latestSHA == storedSHA {
+			fmt.Println("Already up to date.")
+			return nil
+		}
 	}
 
-	fmt.Printf("New version detected (%s). Starting sync for mode %s...\n", latestSHA, cfg.SyncMode)
+	fmt.Printf("Syncing version %s for mode %s...\n", latestSHA, cfg.SyncMode)
 
 	resp, err := http.Get(cfg.SourceURL)
 	if err != nil {
 		return fmt.Errorf("failed to download SQL: %w", err)
 	}
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
+		_ = Body.Close()
 	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
@@ -150,7 +153,6 @@ func SynchronizeData(db *sql.DB, cfg *config.Config) error {
 
 func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.SyncMode) error {
 	scanner := bufio.NewScanner(reader)
-	// Increase scanner buffer for large polygon data
 	const maxCapacity = 10 * 1024 * 1024 // 10MB
 	buf := make([]byte, 64*1024)
 	scanner.Buffer(buf, maxCapacity)
@@ -180,7 +182,24 @@ func processSQL(db *sql.DB, reader io.Reader, tempTableName string, mode config.
 
 		if insertRegex.MatchString(trimmedLine) {
 			inInsert = true
-			continue
+			// If the line contains VALUES and data, process the part after INSERT INTO ... (...)
+			if strings.Contains(strings.ToUpper(trimmedLine), "VALUES") {
+				parts := strings.SplitN(strings.ToUpper(trimmedLine), "VALUES", 2)
+				if len(parts) > 1 {
+					// We need the original casing for values
+					origParts := regexp.MustCompile(`(?i)VALUES`).Split(line, 2)
+					if len(origParts) > 1 {
+						dataPart := strings.TrimSpace(origParts[1])
+						if dataPart != "" {
+							trimmedLine = dataPart
+						} else {
+							continue
+						}
+					}
+				}
+			} else {
+				continue
+			}
 		}
 
 		if inInsert {

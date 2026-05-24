@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"wilayah-go/pkg/config"
 	"wilayah-go/pkg/db"
@@ -15,7 +16,15 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig(config.ModeComplex)
+	force := false
+	for _, arg := range os.Args[1:] {
+		if strings.HasPrefix(arg, "--force") {
+			force = true
+			break
+		}
+	}
+
+	cfg, err := config.LoadConfig(config.ModeComplex, force)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
